@@ -1,0 +1,9 @@
+{
+    "name": "test_env_plugin",
+    "version": "1.0.0",
+    "description": "A sample plugin",
+    "identifier": "com.example.test_env_plugin",
+    "dependencies": [],
+    "author": "Your Name",
+    "core_version": ">=1.0.0"
+}

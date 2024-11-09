@@ -1,0 +1,12 @@
+{
+    "plugins": [
+        {
+            "name": "sample_plugin",
+            "enabled": true
+        },
+        {
+            "name": "another_plugin",
+            "enabled": false
+        }
+    ]
+}

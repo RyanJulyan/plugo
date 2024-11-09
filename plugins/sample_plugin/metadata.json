@@ -1,0 +1,11 @@
+{
+    "name": "sample_plugin",
+    "version": "1.0.0",
+    "description": "A sample plugin",
+    "identifier": "com.example.sample_plugin",
+    "dependencies": [
+        "test_env_plugin"
+    ],
+    "author": "Your Name",
+    "core_version": ">=1.0.0"
+}
