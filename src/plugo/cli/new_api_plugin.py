@@ -15,7 +15,7 @@ import subprocess
     "--output-dir",
     default="./api/plugins",
     type=str,
-    help="Output directory for the new plugin. Defaults to './api/plugins'.",
+    help="Relative path for output directory for the new plugin. Defaults to './api/plugins'.",
 )
 def new_api_plugin(name, output_dir):
     """Create a new flask api plugin using Cookiecutter."""
