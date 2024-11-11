@@ -1,16 +1,46 @@
 [tool.poetry]
-name = "plugin-test"
-version = "0.1.0"
-description = ""
+name = "plugo"
+version = "0.0.1"
+description = "Is a simple plugin manager that will dynamically load plugins from a directory given a config or env variable with dynamic kwargs to pass for plugin loading."
 authors = ["Ryan Julyan <ryan@julyan.biz>"]
 readme = "README.md"
+packages = [
+    { include = "plugo", from = "src" }
+]
+include = ["src/plugo/*"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-Flask = "^3.0.3"
-Flask-SQLAlchemy = "^3.1.1"
+click = "^8.1.7"
+cookiecutter = "^2.6.0"
 setuptools = "^75.3.0"
+# Include optional dependencies
+Flask = { version = "^3.0.3", optional = true }
+Flask-SQLAlchemy = { version = "^3.1.1", optional = true }
+flask-restx = { version = "^1.3.0", optional = true }
 
+[tool.poetry.dev-dependencies]
+black = "^24.10.0"
+bumpver = "^2023.1129"
+coverage = "^7.6.4"
+flake8 = "^7.1.1"
+flake8-html = "^0.4.3"
+isort = "^5.13.2"
+mypy = "^1.13.0"
+pytest = "^8.3.3"
+
+[tool.poetry.extras]
+flask = [
+    "Flask",
+    "Flask-SQLAlchemy",
+    "flask-restx",
+]
+
+[tool.urls]
+"Homepage" = "https://github.com/RyanJulyan/plugo"
+
+[tool.poetry.scripts]
+plugo = "plugo.cli.main:cli" 
 
 [build-system]
 requires = ["poetry-core"]

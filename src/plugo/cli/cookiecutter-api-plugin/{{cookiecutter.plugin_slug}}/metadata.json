@@ -1,0 +1,8 @@
+{
+    "name": "{{cookiecutter.plugin_name}}",
+    "version": "{{cookiecutter.plugin_version}}",
+    "description": "{{cookiecutter.plugin_short_description}}",
+    "identifier": "{{cookiecutter.plugin_identifier}}",
+    "dependencies": [],
+    "author": "{{cookiecutter.author}}",
+}

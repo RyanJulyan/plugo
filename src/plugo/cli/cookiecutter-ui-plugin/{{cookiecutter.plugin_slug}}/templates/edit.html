@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit {{cookiecutter.plugin_name}}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static/csss', filename='styles.css') }}">
+
+</head>
+<body>
+    <div class="container">
+        <!-- Flashed Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <h1>Edit {{cookiecutter.plugin_name}}</h1>
+        <form action="{{ url_for('{{cookiecutter.plugin_slug}}.update', id=item.id) }}" method="post">
+            <!-- CSRF token if using Flask-WTF -->
+            <!-- {{ csrf_token() }} -->
+
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" value="{{ item.name }}" required>
+
+            <!-- Add more fields as necessary, pre-populated with `item` data -->
+
+            <input type="submit" value="Update {{cookiecutter.plugin_name}}">
+        </form>
+
+        <a href="{{ url_for('{{cookiecutter.plugin_slug}}.show', id=item.id) }}">Back to List</a>
+    </div>
+</body>
+</html>
