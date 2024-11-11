@@ -1,7 +1,7 @@
 from flask import current_app
 
-from api.rest_api.routes import {{cookiecutter.plugin_slug}}_ns
+from view.routes import {{cookiecutter.plugin_slug}}_bp
 
 
 def init_plugin(app):
-    current_app.api.add_namespace({{cookiecutter.plugin_slug}}_ns)
+    current_app.register_blueprint({{cookiecutter.plugin_slug}}_bp)
