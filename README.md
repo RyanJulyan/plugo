@@ -1,6 +1,8 @@
 # plugo
 Is a simple plugin manager that will dynamically load plugins from a directory given a config or env variable with dynamic kwargs to pass for plugin loading. Example uses Flask
 
+current_version = "v0.0.4"
+
 ## Quickstart
 
 ### Install
