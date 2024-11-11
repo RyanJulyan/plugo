@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "plugo"
-version = "0.0.1"
+version = "0.0.2"
 description = "Is a simple plugin manager that will dynamically load plugins from a directory given a config or env variable with dynamic kwargs to pass for plugin loading."
 authors = ["Ryan Julyan <ryan@julyan.biz>"]
 license = "MIT"
@@ -54,7 +54,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.bumpver]
-current_version = "0.0.1"
+current_version = "0.0.2"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 tag_message = "{new_version}"
