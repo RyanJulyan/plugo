@@ -10,6 +10,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 readme = "README.md"
+homepage = "https://github.com/RyanJulyan/plugo"
+repository = "https://github.com/RyanJulyan/plugo"
 packages = [
     { include = "plugo", from = "src" }
 ]
@@ -46,10 +48,6 @@ flask = [
 [tool.urls]
 "Homepage" = "https://github.com/RyanJulyan/plugo"
 "Repository" = "https://github.com/RyanJulyan/plugo"
-
-[tool.poetry]
-homepage = "https://github.com/RyanJulyan/plugo"
-repository = "https://github.com/RyanJulyan/plugo"
 
 [tool.poetry.scripts]
 plugo = "plugo.cli.main:cli" 
