@@ -3,7 +3,7 @@ name = "plugo"
 version = "0.0.1"
 description = "Is a simple plugin manager that will dynamically load plugins from a directory given a config or env variable with dynamic kwargs to pass for plugin loading."
 authors = ["Ryan Julyan <ryan@julyan.biz>"]
-license = { file = "LICENSE" }
+license = "MIT"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
@@ -27,7 +27,7 @@ flask-restx = { version = "^1.3.0", optional = true }
 
 [tool.poetry.dev-dependencies]
 black = "^24.10.0"
-bumpver = "^2023.1129"
+bumpver = "^2024.1130"
 coverage = "^7.6.4"
 flake8 = "^7.1.1"
 flake8-html = "^0.4.3"
@@ -51,3 +51,29 @@ plugo = "plugo.cli.main:cli"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.bumpver]
+current_version = "0.0.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version {old_version} -> {new_version}"
+tag_message = "{new_version}"
+tag_scope = "default"
+pre_commit_hook = ""
+post_commit_hook = ""
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'version = "{version}"',
+    'current_version = "{version}"',
+]
+"plugo/__init__.py" = [
+    '__version__ = "{version}"',
+]
+"README.md" = [
+    "{version}",
+    "{pep440_version}",
+]
+
