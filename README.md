@@ -1,7 +1,7 @@
 # plugo
 plugo is a simple plugin manager that dynamically loads plugins from a directory, a `json` configuration file e.g.`plugins_config.json`, an environment variable `ENABLED_PLUGINS`, or a predefined list (`PLUGINS`). It allows for dynamic keyword arguments (`kwargs`) to be passed during plugin loading, making it flexible for various applications like Flask
 
-current_version = "v0.0.5"
+current_version = "v0.0.6"
 
 ## Quickstart
 
