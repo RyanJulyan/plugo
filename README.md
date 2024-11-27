@@ -256,6 +256,15 @@ flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --format=html
 flake8 . --count --exit-zero --max-complexity=11 --max-line-length=127 --statistics --format=html --htmldir="flake8_report/complexity" --exclude=venv
 ```
 
+### BumpVer
+With the CLI command `bumpver`, you can search for and update version strings in your project files. It has a flexible pattern syntax to support many version schemes (SemVer, CalVer or otherwise).
+Run BumbVer with:
+```shell
+bumpver update --major
+bumpver update --minor
+bumpver update --patch
+```
+
 ### Build
 ```shell
 poetry build
