@@ -243,6 +243,55 @@ The intent of this function is to support deployments and allow only what is req
 - `logger` (*Optional*): Logger instance for logging messages.
 - `output_file` (*Optional*): The output file to write the consolidated requirements to. Defaults to `requirements-plugins.txt`
 
+###### Create a Plugin in the Dependent Project
+In your dependent project, define a new command and register it using the entry points in `pyproject.toml`.
+
+**Example Plugin Command (`hello_world.py`):**
+```python
+import click
+
+@click.command()
+def hello_world():
+    """Say Hello, World!"""
+    click.echo("Hello, World!")
+
+```
+
+**Register the Plugin in `pyproject.toml`:**
+Assuming `my_project` is you project and package name:
+```toml
+[tool.poetry.plugins."plugo.commands"]
+"hello_world" = "my_project.hello_world:hello_world"
+```
+
+**Reinstall the Project**
+```shell
+poetry lock
+```
+
+```shell
+poetry install
+```
+
+**Verify the Extended CLI**
+After installing both `plugo` and the dependent project:
+```shell
+plugo --help
+```
+which should show:
+```shell
+Usage: plugo [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  new-base-plugin
+  new-api-plugin
+  new-ui-plugin
+  hello-world  Say Hello, World!
+```
+
 ## Development
 
 ### Test
