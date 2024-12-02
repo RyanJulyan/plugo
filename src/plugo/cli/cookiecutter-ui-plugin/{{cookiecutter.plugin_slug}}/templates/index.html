@@ -3,10 +3,11 @@
 <head>
     <title>{{cookiecutter.plugin_name}} List</title>
 
-    <link rel="stylesheet" href="{{ url_for('static/csss', filename='styles.css') }}">
+    <link rel="stylesheet" href="{% raw %}{{ url_for('{% endraw %}{{cookiecutter.plugin_slug}}{% raw %}.static', filename='css/styles.css') }}{% endraw %}">
 
 </head>
 <body>
+    {% raw %}
     <!-- Flashed Messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -17,9 +18,10 @@
             </ul>
         {% endif %}
     {% endwith %}
+    {% endraw %}
 
     <h1>{{cookiecutter.plugin_name}} List</h1>
-    <a href="{{ url_for('{{cookiecutter.plugin_slug}}.create') }}">Create New {{cookiecutter.plugin_name}}</a>
+    <a href="{% raw %}{{ url_for('{% endraw %}{{cookiecutter.plugin_slug}}{% raw %}.create') }}{% endraw %}">Create New {{cookiecutter.plugin_name}}</a>
     <table>
         <thead>
             <tr>
@@ -29,16 +31,19 @@
             </tr>
         </thead>
         <tbody>
+            {% raw %}
             {% for item in items %}
                 <tr>
                     <td>{{ item.id }}</td>
+            {% endraw %}
                     <!-- Add more columns as necessary to match your data model -->
                     <td class="actions">
-                        <a href="{{ url_for('{{cookiecutter.plugin_slug}}.show', id=item.id) }}">View</a>
-                        <a href="{{ url_for('{{cookiecutter.plugin_slug}}.edit', id=item.id) }}">Edit</a>
-                        <form action="{{ url_for('{{cookiecutter.plugin_slug}}.destroy', id=item.id) }}" method="post" style="display:inline;">
+                        <a href="{% raw %}{{ url_for('{% endraw %}{{cookiecutter.plugin_slug}}{% raw %}.show', id=item.id) }}{% endraw %}">View</a>
+                        <a href="{% raw %}{{ url_for('{% endraw %}{{cookiecutter.plugin_slug}}{% raw %}.edit', id=item.id) }}{% endraw %}">Edit</a>
+                        <form action="{% raw %}{{ url_for('{% endraw %}{{cookiecutter.plugin_slug}}{% raw %}.destroy', id=item.id) }}{% endraw %}" method="post" style="display:inline;">
+            {% raw %}
                             <!-- CSRF token if using Flask-WTF -->
-                            {{ csrf_token() }}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" onclick="return confirm('Are you sure you want to delete this item?');">Delete</button>
                         </form>
                     </td>
@@ -48,6 +53,7 @@
                     <td colspan="4">No items found.</td>
                 </tr>
             {% endfor %}
+            {% endraw %}
         </tbody>
     </table>
 </body>

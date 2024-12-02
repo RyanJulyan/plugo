@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ...services.{{cookiecutter.plugin_slug}}_service import {{cookiecutter.plugin_slug | capitalize}}Service
+from ..services.{{cookiecutter.plugin_slug}}_service import {{cookiecutter.plugin_slug | capitalize}}Service
 
 service = {{cookiecutter.plugin_slug | capitalize}}Service()
 

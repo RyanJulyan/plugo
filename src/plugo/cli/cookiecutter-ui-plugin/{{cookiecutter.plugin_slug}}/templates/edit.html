@@ -2,12 +2,13 @@
 <html>
 <head>
     <title>Edit {{cookiecutter.plugin_name}}</title>
-
-    <link rel="stylesheet" href="{{ url_for('static/csss', filename='styles.css') }}">
+    
+    <link rel="stylesheet" href="{% raw %}{{ url_for('{% endraw %}{{cookiecutter.plugin_slug}}{% raw %}.static', filename='css/styles.css') }}{% endraw %}">
 
 </head>
 <body>
     <div class="container">
+        {% raw %}
         <!-- Flashed Messages -->
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -18,21 +19,25 @@
                 </ul>
             {% endif %}
         {% endwith %}
+        {% endraw %}
 
         <h1>Edit {{cookiecutter.plugin_name}}</h1>
-        <form action="{{ url_for('{{cookiecutter.plugin_slug}}.update', id=item.id) }}" method="post">
+        <form action="{% raw %}{{ url_for('{% endraw %}{{cookiecutter.plugin_slug}}{% raw %}.update', id=item.id) }}{% endraw %}" method="post">
+            {% raw %}
             <!-- CSRF token if using Flask-WTF -->
-            <!-- {{ csrf_token() }} -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <label for="name">Name:</label>
             <input type="text" name="name" id="name" value="{{ item.name }}" required>
+            {% endraw %}
 
             <!-- Add more fields as necessary, pre-populated with `item` data -->
 
             <input type="submit" value="Update {{cookiecutter.plugin_name}}">
         </form>
 
-        <a href="{{ url_for('{{cookiecutter.plugin_slug}}.show', id=item.id) }}">Back to List</a>
+        <a href="{% raw %}{{ url_for('{% endraw %}{{ cookiecutter.plugin_slug }}{% raw %}.show', id=item.id) }}{% endraw %}">Back to List</a>
+
     </div>
 </body>
 </html>
