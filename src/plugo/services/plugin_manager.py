@@ -16,6 +16,38 @@ from pkg_resources import (
 from plugo.models.plugin_config import PLUGINS
 
 
+def load_plugin_module(plugin_name, plugin_path, plugin_main, logger):
+    """
+    Dynamically load a plugin module, ensuring proper package hierarchy.
+    """
+    # Add the parent directory of the plugins directory to sys.path temporarily
+    parent_dir = os.path.dirname(os.path.dirname(plugin_path))
+    sys.path.insert(0, parent_dir)
+
+    try:
+        # Construct the module name based on the plugin's relative path
+        # For example: 'plugins.test.plugin'
+        relative_path = os.path.relpath(plugin_path, parent_dir)
+        module_name = ".".join(relative_path.split(os.sep) + ["plugin"])
+
+        # Load the plugin module
+        spec = importlib.util.spec_from_file_location(module_name, plugin_main)
+        plugin_module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = plugin_module  # Ensure it's added to sys.modules
+        spec.loader.exec_module(plugin_module)
+
+        logger.info(f"Successfully loaded plugin module: {module_name}")
+        return plugin_module
+
+    except Exception as e:
+        logger.error(f"Error loading plugin module '{module_name}': {e}")
+        raise e
+
+    finally:
+        # Remove the parent directory from sys.path to avoid conflicts
+        sys.path.pop(0)
+
+
 def load_plugins(
     plugin_directory: Optional[str] = None,
     config_path: Optional[str] = None,
@@ -144,7 +176,7 @@ def load_plugins(
                                     logger.info(
                                         f"Requirement '{line}' already satisfied for plugin '{plugin_name}'."
                                     )
-                                except (DistributionNotFound, VersionConflict) as e:
+                                except (DistributionNotFound, VersionConflict):
                                     logger.info(
                                         f"Installing requirement '{line}' for plugin '{plugin_name}'."
                                     )
@@ -252,11 +284,10 @@ def load_plugins(
             plugin_main = os.path.join(plugin_path, "plugin.py")
 
             try:
-                spec = importlib.util.spec_from_file_location(
-                    f"{plugin_name}.plugin", plugin_main
+                plugin_module = load_plugin_module(
+                    plugin_name, plugin_path, plugin_main, logger
                 )
-                plugin_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(plugin_module)
+
                 if hasattr(plugin_module, "init_plugin"):
                     plugin_module.init_plugin(**kwargs)
                     plugin["is_loaded"] = True
