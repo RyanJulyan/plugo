@@ -37,13 +37,135 @@ plugo new-api-plugin
 plugo new-base-plugin --name="Example Plugin" --output-dir="plugins"
 ```
 
+### Hot Reload
+
+#### 1. Enable Hot Reload (Default)
+
+Hot reload is **enabled by default**. The watcher will automatically monitor your plugin directories for changes.
+
+#### 2. Disable Hot Reload
+
+To disable hot reload, set the environment variable:
+
+```bash
+export ENABLE_PLUGIN_HOT_RELOAD=false
+```
+
+Or in your Python code:
+
+```python
+import os
+os.environ["ENABLE_PLUGIN_HOT_RELOAD"] = "false"
+```
+
+
+#### Configuration Options
+
+##### PluginWatcher
+
+The `PluginWatcher` class accepts the following parameters:
+
+- **watch_paths** (list[str]): List of directory paths to watch for changes
+- **reload_callback** (Callable): Function to call when changes are detected
+- **debounce_seconds** (float): Time to wait before reloading after a change (default: 1.0)
+- **logger** (Optional[logging.Logger]): Logger instance for logging messages
+
+##### create_reload_callback
+
+The `create_reload_callback` function creates a callback for reloading plugins:
+
+- **plugin_directory** (Optional[str]): The path to the directory containing plugin folders
+- **config_path** (Optional[str]): The path to the plugin configuration JSON file
+- **logger** (Optional[logging.Logger]): Logger instance for logging messages
+- **clear_modules** (bool): Whether to clear plugin modules from sys.modules before reloading (default: True)
+- **plugin_module_prefixes** (Optional[list[str]]): List of module name prefixes to clear (e.g., ['plugins.', 'my_plugins.']). If None and plugin_directory is provided, will use the plugin directory basename
+- **\*\*kwargs** (Any): Additional keyword arguments passed to each plugin's init_plugin function
+
+#### File Types Monitored
+
+The watcher monitors changes to:
+- Python files (`.py`)
+- Configuration files (`.json`)
+- Requirements files (`.txt`)
+
+The following files are ignored:
+- Compiled Python files (`.pyc`, `.pyo`)
+- Temporary files (`.swp`, `.tmp`)
+- `__pycache__` directories
+
+#### Limitations
+
+##### Flask Blueprint Reloading
+
+**IMPORTANT**: Flask has a strict limitation where blueprints cannot be re-registered after the application has handled its first request. This means hot reload will fail with errors like:
+
+```
+ValueError: The name 'plugin_name' is already registered for a different blueprint
+```
+
+**Recommended Solutions**:
+
+1. **Use Flask's built-in debug mode** (recommended for development):
+   - Flask's debug mode automatically reloads the entire application when files change
+   - This provides full hot reload without blueprint conflicts
+   - Set `app.run(debug=True)` or use the environment variable `FLASK_DEBUG=1`
+
+2. **Design plugins without blueprints**:
+   - Use route decorators directly on the app object
+   - Register routes dynamically without blueprints
+   - This allows hot reload to work without conflicts
+
+3. **Give blueprints unique names on each reload**:
+   - Append a timestamp or counter to blueprint names
+   - Example: `Blueprint(f'plugin_{time.time()}', __name__)`
+   - Note: This can lead to memory leaks over time
+
+4. **Restart the application manually**:
+   - Disable hot reload (`ENABLE_PLUGIN_HOT_RELOAD=false`)
+   - Manually restart the Flask application when plugins change
+
+#### create_reload_callback Function
+
+```python
+def create_reload_callback(
+    plugin_directory: Optional[str] = None,
+    config_path: Optional[str] = None,
+    logger: Optional[logging.Logger] = None,
+    clear_modules: bool = True,
+    plugin_module_prefixes: Optional[list[str]] = None,
+    **kwargs: Any,
+) -> Callable[[], Optional[Set[str]]]:
+    """
+    Create a callback function for reloading plugins.
+    
+    Args:
+        plugin_directory: The path to the directory containing plugin folders
+        config_path: The path to the plugin configuration JSON file
+        logger: Logger instance for logging messages
+        clear_modules: Whether to clear plugin modules from sys.modules before reloading
+        plugin_module_prefixes: List of module name prefixes to clear. Only modules
+                               matching these prefixes will be cleared from sys.modules.
+                               This prevents accidentally removing core modules.
+        **kwargs: Additional keyword arguments passed to each plugin's init_plugin function
+    
+    Returns:
+        A callable that reloads plugins and returns the set of loaded plugin names
+    """
+```
+
 ### Example Plugin
 
 #### Plugin Structure
 All plugins have the following files:
 - `metadata.json` (*Required*)
+- `__init__.py` (*Required*)
 - `plugin.py` (*Required*)
+- `pyproject.toml` (*Optional*) or
 - `requirements.txt` (*Optional*)
+
+Plugins can specify dependencies using either:
+- **pyproject.toml** (PEP 621 or Poetry format) - Preferred
+- **requirements.txt** (traditional pip format)
 ```
 └── 📁sample_plugin
     └── __init__.py
@@ -293,6 +415,38 @@ Commands:
 ```
 
 ## Development
+
+
+### Install the local environment
+```shell
+python -m venv venv
+```
+
+#### Windows
+```shell
+venv/scripts/activate
+```
+
+#### Mac/Linux
+```shell
+source venv/bin/activate
+```
+
+### Install the local `Plugo` project
+#### Install `poetry` package manager
+```shell
+pip install poetry
+```
+
+#### Lock `poetry` dependencies
+```shell
+poetry lock
+```
+
+#### Install `plugo` package via `poetry` (including dependencies)
+```shell
+poetry install
+```
 
 ### Test
 ```shell

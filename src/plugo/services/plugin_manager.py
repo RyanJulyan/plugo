@@ -14,6 +14,7 @@ from pkg_resources import (
 )
 
 from plugo.models.plugin_config import PLUGINS
+from plugo.services.plugin_runtime import get_runtime
 
 
 def load_plugin_module(plugin_name, plugin_path, plugin_main, logger):
@@ -24,6 +25,8 @@ def load_plugin_module(plugin_name, plugin_path, plugin_main, logger):
     parent_dir = os.path.dirname(os.path.dirname(plugin_path))
     sys.path.insert(0, parent_dir)
 
+    module_name = ""
+
     try:
         # Construct the module name based on the plugin's relative path
         # For example: 'plugins.test.plugin'
@@ -32,6 +35,10 @@ def load_plugin_module(plugin_name, plugin_path, plugin_main, logger):
 
         # Load the plugin module
         spec = importlib.util.spec_from_file_location(module_name, plugin_main)
+        if spec is None or spec.loader is None:
+            logger.error(f"Failed to load spec for module {module_name}")
+            raise ImportError(f"Failed to load spec for module {module_name}")
+
         plugin_module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = plugin_module  # Ensure it's added to sys.modules
         spec.loader.exec_module(plugin_module)
@@ -124,6 +131,12 @@ def load_plugins(
     else:
         # Config path not provided, proceed without it
         logger.info("No configuration file provided. Proceeding without it.")
+        # If no config file is provided, automatically enable all valid plugins in the directory
+        if plugin_directory:
+            for plugin_name in os.listdir(plugin_directory):
+                plugin_path = os.path.join(plugin_directory, plugin_name)
+                if os.path.isdir(plugin_path):
+                    enabled_plugins.add(plugin_name)
 
     # Update with environment variables if present
     env_plugins = os.getenv("ENABLED_PLUGINS", "")
@@ -396,5 +409,17 @@ def load_plugins(
                 logger.error(
                     f"Error loading plugin '{plugin_name}' from environment variable: {e}"
                 )
+
+    # Automatically start hot reload in the background if enabled
+    try:
+        runtime = get_runtime()
+        runtime.ensure_hot_reload(
+            plugin_directory=plugin_directory,
+            config_path=config_path,
+            logger=logger,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.warning(f"Could not initialize automatic hot reload: {e}")
 
     return loaded_plugins
