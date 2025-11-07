@@ -15,6 +15,7 @@ from pkg_resources import (
 
 from plugo.models.plugin_config import PLUGINS
 from plugo.services.plugin_runtime import get_runtime
+from plugo.services.plugin_dependencies import get_plugin_dependencies
 
 
 def load_plugin_module(plugin_name, plugin_path, plugin_main, logger):
@@ -173,36 +174,36 @@ def load_plugins(
 
             all_plugins_in_directory.add(plugin_name)
 
-            # Check for requirements.txt in the plugin directory
-            requirements_file = os.path.join(plugin_path, "requirements.txt")
-            if os.path.exists(requirements_file):
-                logger.info(f"Processing requirements for plugin '{plugin_name}'")
-                with open(requirements_file, "r") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line and not line.startswith("#"):
-                            try:
-                                # Use pkg_resources to check if the requirement is installed
-                                req = PkgRequirement.parse(line)
-                                try:
-                                    get_distribution(req)
-                                    logger.info(
-                                        f"Requirement '{line}' already satisfied for plugin '{plugin_name}'."
-                                    )
-                                except (DistributionNotFound, VersionConflict):
-                                    logger.info(
-                                        f"Installing requirement '{line}' for plugin '{plugin_name}'."
-                                    )
-                                    # Install the requirement using pip
-                                    subprocess.check_call(
-                                        [sys.executable, "-m", "pip", "install", line]
-                                    )
-                            except Exception as e:
-                                logger.error(
-                                    f"Error processing requirement '{line}' in plugin '{plugin_name}': {e}"
-                                )
+            # Check for dependencies in pyproject.toml or requirements.txt
+            dependencies = get_plugin_dependencies(plugin_path, logger)
+
+            if dependencies:
+                logger.info(
+                    f"Processing {len(dependencies)} dependencies for plugin '{plugin_name}'"
+                )
+                for line in dependencies:
+                    try:
+                        # Use pkg_resources to check if the requirement is installed
+                        req = PkgRequirement.parse(line)
+                        try:
+                            get_distribution(req)
+                            logger.info(
+                                f"Requirement '{line}' already satisfied for plugin '{plugin_name}'."
+                            )
+                        except (DistributionNotFound, VersionConflict):
+                            logger.info(
+                                f"Installing requirement '{line}' for plugin '{plugin_name}'."
+                            )
+                            # Install the requirement using pip
+                            subprocess.check_call(
+                                [sys.executable, "-m", "pip", "install", line]
+                            )
+                    except Exception as e:
+                        logger.error(
+                            f"Error processing requirement '{line}' in plugin '{plugin_name}': {e}"
+                        )
             else:
-                logger.info(f"No requirements.txt found for plugin '{plugin_name}'.")
+                logger.info(f"No dependencies found for plugin '{plugin_name}'.")
 
             metadata_path = os.path.join(plugin_path, "metadata.json")
             plugin_main = os.path.join(plugin_path, "plugin.py")

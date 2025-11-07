@@ -5,6 +5,8 @@ from typing import List, Optional
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet, InvalidSpecifier
 
+from plugo.services.plugin_dependencies import get_plugin_dependencies
+
 
 def consolidate_plugin_requirements(
     plugin_directory: str,
@@ -13,7 +15,10 @@ def consolidate_plugin_requirements(
     output_file: str = "requirements-plugins.txt",
 ):
     """
-    Consolidate requirements.txt files from loaded plugins into a single requirements file.
+    Consolidate plugin dependencies from pyproject.toml or requirements.txt files into a single requirements file.
+
+    Supports both pyproject.toml (PEP 621 and Poetry formats) and requirements.txt files.
+    If both exist in a plugin directory, pyproject.toml takes precedence.
 
     Args:
         plugin_directory (str): The directory where plugins are stored.
@@ -54,27 +59,27 @@ def consolidate_plugin_requirements(
     # Iterate over each loaded plugin
     for plugin_name in loaded_plugins:
         plugin_path = os.path.join(plugin_directory, plugin_name)
-        requirements_file = os.path.join(plugin_path, "requirements.txt")
-        if os.path.exists(requirements_file):
+
+        # Get dependencies from pyproject.toml or requirements.txt
+        dependencies = get_plugin_dependencies(plugin_path, logger)
+
+        if dependencies:
             logger.info(f"Processing requirements for plugin '{plugin_name}'")
-            with open(requirements_file, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        try:
-                            # Parse the requirement line
-                            req = Requirement(line)
-                            package_name = req.name.lower()  # Normalize package name
-                            specifier = req.specifier
-                            if package_name not in requirements:
-                                requirements[package_name] = []
-                            requirements[package_name].append(
-                                {"specifier": specifier, "plugin": plugin_name}
-                            )
-                        except Exception as e:
-                            logger.warning(
-                                f"Could not parse requirement '{line}' in plugin '{plugin_name}': {e}"
-                            )
+            for line in dependencies:
+                try:
+                    # Parse the requirement line
+                    req = Requirement(line)
+                    package_name = req.name.lower()  # Normalize package name
+                    specifier = req.specifier
+                    if package_name not in requirements:
+                        requirements[package_name] = []
+                    requirements[package_name].append(
+                        {"specifier": specifier, "plugin": plugin_name}
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Could not parse requirement '{line}' in plugin '{plugin_name}': {e}"
+                    )
 
     # Helper function to check if specifiers conflict
     def specifiers_conflict(specifiers):

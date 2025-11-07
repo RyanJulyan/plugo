@@ -38,9 +38,9 @@ plugo new-base-plugin --name="Example Plugin" --output-dir="plugins"
 ```
 
 ### Hot Reload
+Hot reload happens **automatically** when you call `load_plugins()`. No additional setup needed!
 
 #### 1. Enable Hot Reload (Default)
-
 Hot reload is **enabled by default**. The watcher will automatically monitor your plugin directories for changes.
 
 #### 2. Disable Hot Reload
