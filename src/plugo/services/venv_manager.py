@@ -28,20 +28,28 @@ def build_venv_key(
     requirements: List[str],
 ) -> str:
     """
-    Build a stable key so that different versions / dep sets get different venvs.
+    Build a stable, human-readable key so different versions/dep sets get different venvs.
 
     Key includes:
     - plugin_name (sanitized)
     - version (if provided)
     - hash over normalized requirements
 
+    Format:
+        <plugin_name>[-v<version>]-<hash>
+
     This means:
     - Same plugin + same version + same reqs => same venv
     - Change version or reqs => different venv
+
+    - plugin_name is sanitized for filesystem use.
+    - version is included visibly when provided (also sanitized).
+    - hash is derived from (version, sorted(requirements)) so changes create new envs.
     """
     norm_reqs = [r.strip() for r in requirements if r and r.strip()]
+
     sig = {
-        "version": version or "",
+        "version": (version or "").strip(),
         "requirements": sorted(norm_reqs),
     }
     digest = hashlib.sha1(json.dumps(sig, sort_keys=True).encode("utf-8")).hexdigest()[
@@ -52,16 +60,34 @@ def build_venv_key(
         plugin_name.replace(os.sep, "_").replace(":", "_").replace(" ", "_").strip("_")
         or "plugin"
     )
-    return f"{safe_name}-{digest}"
+
+    ver = (version or "").strip()
+    if ver:
+        safe_ver = (
+            ver.replace(os.sep, "_")
+            .replace(":", "_")
+            .replace(" ", "_")
+            .replace("/", "_")
+            .replace("\\", "_")
+            .strip("_")
+        )
+        # Prefix with v for clarity, but don't duplicate if user already uses 'v'
+        if not safe_ver.startswith("v"):
+            safe_ver = f"v{safe_ver}"
+        key = f"{safe_name}-{safe_ver}-{digest}"
+    else:
+        key = f"{safe_name}-{digest}"
+
+    return key
 
 
 class VenvManager:
     """
     Minimal per-plugin venv manager.
 
-    - Venvs live under `base` (default from PLUGO_VENV_HOME / VENV_HOME / ./.plugo/venvs)
-    - `ensure(key, requirements)` creates or reuses a venv and installs deps
-    - `add_site_packages_to_sys_path(venv)` wires that env into current process imports
+    - Venvs live under `base`
+    - `ensure(key, requirements)` creates/reuses a venv, installs deps
+    - `add_site_packages_to_sys_path(venv)` exposes that venv's packages to current process
     """
 
     def __init__(self, base: Optional[Path] = None) -> None:
@@ -69,7 +95,7 @@ class VenvManager:
         self.base.mkdir(parents=True, exist_ok=True)
 
     def _venv_dir(self, key: str) -> Path:
-        # Key is already "semantic", just ensure it's safe as a dir name
+        # key should already be sanitized by build_venv_key, but harden anyway
         safe_key = (
             key.replace(os.sep, "_").replace(":", "_").replace(" ", "_").strip("_")
         )
@@ -111,10 +137,10 @@ class VenvManager:
 
     def add_site_packages_to_sys_path(self, venv: VenvInfo) -> None:
         """
-        Prepend the venv's site-packages dirs to sys.path so its packages are importable.
+        Prepend the venv's site-packages directories to sys.path.
 
-        This keeps everything in a single process while isolating dependency resolution
-        per-plugin via dedicated venvs.
+        This keeps plugins running in-process while isolating their dependencies
+        into their own venvs.
         """
         code = (
             "import site, sys, json, os; "

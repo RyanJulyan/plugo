@@ -1,9 +1,7 @@
 import importlib
 import logging
-import os
 import sys
-import types
-from typing import List, Dict, Set
+from typing import Dict
 
 import pytest
 

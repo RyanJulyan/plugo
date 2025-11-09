@@ -413,9 +413,57 @@ Commands:
   new-ui-plugin    Create a new flask ui plugin using Cookiecutter.
 ```
 
+## Per-Plugin Virtual Environments (default since 3.x)
+From `plugo` 3.x you can optionally isolate plugin dependencies into their own
+virtual environments, similar to how larger connector frameworks work.
+
+This feature is **opt-in** and **backwards compatible**:
+
+-  If you disable it, `plugo` behaves exactly as before:
+  - `load_plugins` installs missing plugin dependencies into the **current** environment.
+- If you do nothing, each plugin gets its own lightweight venv based on:
+  - the plugin name
+  - the plugin version from `metadata.json`
+  - the plugin’s Python dependency list (from `pyproject.toml` / `requirements.txt`)
+
+### When to use per-plugin venvs
+
+Use per-plugin venvs when:
+
+- Different plugins require **conflicting versions** of the same library.
+- You ship or test plugins independently and don’t want them to pollute the host env.
+- You want a cleaner separation between your main app and plugin dependencies.
+
+If you’re happy with the original behavior, you candisable it.
+```shell
+# Enable per-plugin virtual environments
+export PLUGO_USE_VENVS=false
+```
+
+
+### Enabling per-plugin venvs
+
+Per-plugin venvs are controlled purely via environment variables.
+No code changes are required in your app. It is enabled by default.
+```shell
+# Enable per-plugin virtual environments
+export PLUGO_USE_VENVS=true
+```
+
+Customize where plugin venvs are stored:
+```shell
+# (Optional) Customize where plugin venvs are stored
+export PLUGO_VENV_HOME="/path/to/.plugo/venvs"
+# or use:
+export VENV_HOME="/path/to/.plugo/venvs"
+```
+
+If none of the above (`VENV_HOME` or `PLUGO_VENV_HOME`) are set, the default base directory is:
+```shell
+./.plugo/venvs
+```
+
 ## Development
-
-
 ### Install the local environment
 ```shell
 python -m venv venv

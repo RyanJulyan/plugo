@@ -118,32 +118,68 @@ def test_load_plugins_success(
     "plugo.services.plugin_manager.get_distribution",
     side_effect=DistributionNotFound("Dist not found"),
 )
-def test_load_plugins_with_missing_dependency(
+def test_load_plugins_with_missing_dependency_venv(
     mock_get_distribution,
     mock_check_call,
     temp_plugin_directory,
     temp_config_file,
     mock_logger,
 ):
-    """Test handling of a missing dependency that requires installation."""
+    """Missing dependency should trigger installation inside per-plugin venv (default behavior)."""
 
     # Set up a plugin with a requirements.txt file
     plugin1_dir = create_plugin_files(temp_plugin_directory, "plugin1")
     requirements_file = plugin1_dir / "requirements.txt"
     requirements_file.write_text("missing_package>=1.0")
 
-    # Call load_plugins
+    # Call load_plugins (PLUGO_USE_VENVS defaults to enabled)
     load_plugins(str(temp_plugin_directory), str(temp_config_file), logger=mock_logger)
 
-    # Debugging print statements
-    print(f"Called check_call with: {mock_check_call.call_args_list}")
-    print(
-        f"Expected call: {[mock.ANY, '-m', 'pip', 'install', 'missing_package>=1.0']}"
-    )
+    calls = [args[0] for args, _ in mock_check_call.call_args_list]
 
-    # Check if `pip install` was called for the missing package
-    mock_check_call.assert_called_with(
-        [mock.ANY, "-m", "pip", "install", "missing_package>=1.0"]
+    # Expect at least one pip install call
+    pip_install_calls = [
+        cmd
+        for cmd in calls
+        if len(cmd) >= 4 and cmd[1] == "-m" and cmd[2] == "pip" and cmd[3] == "install"
+    ]
+    assert pip_install_calls, f"No pip install calls found. Calls: {calls}"
+
+    # One of them must install our missing package
+    assert any(
+        "missing_package>=1.0" in cmd for cmd in pip_install_calls
+    ), f"'missing_package>=1.0' not found in pip calls: {pip_install_calls}"
+
+
+@mock.patch.dict(os.environ, {"PLUGO_USE_VENVS": "0"})
+@mock.patch("plugo.services.plugin_manager.subprocess.check_call")
+@mock.patch(
+    "plugo.services.plugin_manager.get_distribution",
+    side_effect=DistributionNotFound("Dist not found"),
+)
+def test_load_plugins_with_missing_dependency_legacy_no_venv(
+    mock_get_distribution,
+    mock_check_call,
+    temp_plugin_directory,
+    temp_config_file,
+    mock_logger,
+):
+    """
+    When PLUGO_USE_VENVS is disabled, missing dependencies should be installed
+    into the current environment via sys.executable -m pip install <req>.
+    """
+
+    # Set up a plugin with a requirements.txt file
+    plugin1_dir = create_plugin_files(temp_plugin_directory, "plugin1")
+    requirements_file = plugin1_dir / "requirements.txt"
+    requirements_file.write_text("missing_package>=1.0")
+
+    # Call load_plugins with venvs explicitly disabled
+    load_plugins(str(temp_plugin_directory), str(temp_config_file), logger=mock_logger)
+
+    # We expect a direct pip install call using sys.executable
+    mock_check_call.assert_any_call(
+        [sys.executable, "-m", "pip", "install", "missing_package>=1.0"]
     )
 
 
