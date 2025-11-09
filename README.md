@@ -408,10 +408,9 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  new-base-plugin
-  new-api-plugin
-  new-ui-plugin
-  hello-world  Say Hello, World!
+  new-api-plugin   Create a new flask api plugin using Cookiecutter.
+  new-base-plugin  Create a new plugin using Cookiecutter.
+  new-ui-plugin    Create a new flask ui plugin using Cookiecutter.
 ```
 
 ## Development
