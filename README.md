@@ -234,6 +234,7 @@ The `metadata.json` defines metadata about the plugin. A core consideration is p
 
 ##### Loading Plugins
 Plugins can be loaded from a `plugins_config.json` file or a comma separated list Environment Variable `ENABLED_PLUGINS`. The major difference is the level of control. The Environment Variable will assume all plugins in the list are active, while the `plugins_config.json` file allows you to specify if a plugin is active or not e.g.:
+
 ```JSON
 // plugins_config.json
 
@@ -434,6 +435,8 @@ Use per-plugin venvs when:
 - You ship or test plugins independently and don’t want them to pollute the host env.
 - You want a cleaner separation between your main app and plugin dependencies.
 
+**Performance Note:** Virtual environments are created **only for enabled plugins**. Disabled plugins are skipped entirely during the loading process, so your environment won't grow unnecessarily even if you have many unused plugins configured.
+
 If you’re happy with the original behavior, you candisable it.
 ```shell
 # Enable per-plugin virtual environments
@@ -487,6 +490,7 @@ pip install poetry
 
 #### Lock `poetry` dependencies
 ```shell
+poetry cache clear pypi --all -n
 poetry lock
 ```
 

@@ -158,7 +158,7 @@ def load_plugins(
     configured_plugins = enabled_plugins.union(disabled_plugins)
 
     # ---------------------------
-    # Discover directory plugins
+    # Discover directory plugins (metadata only)
     # ---------------------------
     plugin_info: Dict[str, Dict[str, Any]] = {}
     all_plugins_in_directory: Set[str] = set()
@@ -206,55 +206,8 @@ def load_plugins(
 
             version = metadata.get("version") or metadata.get("plugin_version") or ""
 
-            # Python/package dependencies from repository files
-            pip_requirements: List[str] = get_plugin_dependencies(plugin_path, logger)
-
-            if pip_requirements:
-                logger.info(
-                    f"Processing {len(pip_requirements)} dependencies for plugin '{plugin_name}'"
-                )
-
-                if venv_manager:
-                    # Version + requirements aware venv key
-                    venv_key = build_venv_key(
-                        plugin_name,
-                        version,
-                        pip_requirements,
-                    )
-                    try:
-                        venv = venv_manager.ensure(venv_key, pip_requirements)
-                        venv_manager.add_site_packages_to_sys_path(venv)
-                        logger.info(
-                            f"Using dedicated venv '{venv_key}' for plugin '{plugin_name}'."
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"Error preparing venv for plugin '{plugin_name}': {e}"
-                        )
-                        # Intentionally continue; plugin may still run if deps already satisfied
-                else:
-                    # Original behavior: install into current environment
-                    for line in pip_requirements:
-                        try:
-                            req = PkgRequirement.parse(line)
-                            try:
-                                get_distribution(req)
-                                logger.info(
-                                    f"Requirement '{line}' already satisfied for plugin '{plugin_name}'."
-                                )
-                            except (DistributionNotFound, VersionConflict):
-                                logger.info(
-                                    f"Installing requirement '{line}' for plugin '{plugin_name}'."
-                                )
-                                subprocess.check_call(
-                                    [sys.executable, "-m", "pip", "install", line]
-                                )
-                        except Exception as e:
-                            logger.error(
-                                f"Error processing requirement '{line}' in plugin '{plugin_name}': {e}"
-                            )
-            else:
-                logger.info(f"No dependencies found for plugin '{plugin_name}'.")
+            # Python/package dependencies from repository files (lazy loaded later if enabled)
+            pip_requirements: List[str] = []
 
             # Store plugin info (unchanged semantics)
             plugin_info[plugin_name] = {
@@ -323,6 +276,61 @@ def load_plugins(
             plugin = plugin_info[plugin_name]
             plugin_path = plugin["path"]
             plugin_main = os.path.join(plugin_path, "plugin.py")
+
+            # ===== LAZY LOAD DEPENDENCIES FOR ENABLED PLUGINS ONLY =====
+            # Now that we know this plugin is enabled and has its dependencies resolved,
+            # we fetch and process its Python dependencies
+            if not plugin["pip_requirements"]:
+                # First time processing this enabled plugin's dependencies
+                pip_requirements: List[str] = get_plugin_dependencies(plugin_path, logger)
+                plugin["pip_requirements"] = pip_requirements
+
+                if pip_requirements:
+                    logger.info(
+                        f"Processing {len(pip_requirements)} dependencies for enabled plugin '{plugin_name}'"
+                    )
+
+                    if venv_manager:
+                        # Version + requirements aware venv key
+                        venv_key = build_venv_key(
+                            plugin_name,
+                            plugin["version"],
+                            pip_requirements,
+                        )
+                        try:
+                            venv = venv_manager.ensure(venv_key, pip_requirements)
+                            venv_manager.add_site_packages_to_sys_path(venv)
+                            logger.info(
+                                f"Using dedicated venv '{venv_key}' for plugin '{plugin_name}'."
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Error preparing venv for plugin '{plugin_name}': {e}"
+                            )
+                            # Intentionally continue; plugin may still run if deps already satisfied
+                    else:
+                        # Original behavior: install into current environment
+                        for line in pip_requirements:
+                            try:
+                                req = PkgRequirement.parse(line)
+                                try:
+                                    get_distribution(req)
+                                    logger.info(
+                                        f"Requirement '{line}' already satisfied for plugin '{plugin_name}'."
+                                    )
+                                except (DistributionNotFound, VersionConflict):
+                                    logger.info(
+                                        f"Installing requirement '{line}' for plugin '{plugin_name}'."
+                                    )
+                                    subprocess.check_call(
+                                        [sys.executable, "-m", "pip", "install", line]
+                                    )
+                            except Exception as e:
+                                logger.error(
+                                    f"Error processing requirement '{line}' in plugin '{plugin_name}': {e}"
+                                )
+                else:
+                    logger.info(f"No dependencies found for enabled plugin '{plugin_name}'.")
 
             try:
                 plugin_module = load_plugin_module(
