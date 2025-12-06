@@ -282,7 +282,9 @@ def load_plugins(
             # we fetch and process its Python dependencies
             if not plugin["pip_requirements"]:
                 # First time processing this enabled plugin's dependencies
-                pip_requirements: List[str] = get_plugin_dependencies(plugin_path, logger)
+                pip_requirements: List[str] = get_plugin_dependencies(
+                    plugin_path, logger
+                )
                 plugin["pip_requirements"] = pip_requirements
 
                 if pip_requirements:
@@ -330,7 +332,9 @@ def load_plugins(
                                     f"Error processing requirement '{line}' in plugin '{plugin_name}': {e}"
                                 )
                 else:
-                    logger.info(f"No dependencies found for enabled plugin '{plugin_name}'.")
+                    logger.info(
+                        f"No dependencies found for enabled plugin '{plugin_name}'."
+                    )
 
             try:
                 plugin_module = load_plugin_module(
