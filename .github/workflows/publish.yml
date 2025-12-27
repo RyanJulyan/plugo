@@ -11,14 +11,19 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: 
+
+    # Optional: ties the job to a GitHub Environment named "pypi"
+    # so you can require approvals and store protected secrets there (if you ever use them).
+    environment:
       name: pypi
-      url: https://pypi.org/project/plugo/
+      url: https://pypi.org/project/${{ github.event.repository.name }}/
+
     permissions:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,8 +37,11 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-ansi
+
       - name: Build distribution
         run: poetry build
 
-      - name: Publish to PyPI
+      - name: Publish to PyPI (Trusted Publishing)
         uses: pypa/gh-action-pypi-publish@release/v1
