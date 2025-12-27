@@ -142,7 +142,15 @@ def load_plugins(
             for plugin_name in os.listdir(plugin_directory):
                 plugin_path = os.path.join(plugin_directory, plugin_name)
                 if os.path.isdir(plugin_path):
-                    enabled_plugins.add(plugin_name)
+                    # Skip common non-plugin directories
+                    if plugin_name not in (
+                        "__pycache__",
+                        ".git",
+                        ".egg-info",
+                        ".pytest_cache",
+                        ".tox",
+                    ):
+                        enabled_plugins.add(plugin_name)
 
     # ---------------------------
     # ENABLED_PLUGINS env (unchanged)
@@ -173,6 +181,16 @@ def load_plugins(
         for plugin_name in os.listdir(plugin_directory):
             plugin_path = os.path.join(plugin_directory, plugin_name)
             if not os.path.isdir(plugin_path):
+                continue
+
+            # Skip common non-plugin directories
+            if plugin_name in (
+                "__pycache__",
+                ".git",
+                ".egg-info",
+                ".pytest_cache",
+                ".tox",
+            ):
                 continue
 
             all_plugins_in_directory.add(plugin_name)
