@@ -78,7 +78,11 @@ class PluginFileEventHandler(FileSystemEventHandler):
 
         # Cancel any pending reload timer
         if self.pending_timer is not None:
-            self.pending_timer.cancel()
+            try:
+                self.pending_timer.cancel()
+            except RuntimeError:
+                # Timer may fail to cancel during shutdown
+                pass
 
         # Schedule a new reload after the debounce period
         try:
@@ -87,7 +91,7 @@ class PluginFileEventHandler(FileSystemEventHandler):
             )
             self.pending_timer.start()
         except RuntimeError:
-            # Ignore errors during timer creation (can happen during shutdown)
+            # Ignore errors during timer creation or start (can happen during shutdown)
             self.pending_timer = None
 
     def _trigger_reload(self) -> None:
