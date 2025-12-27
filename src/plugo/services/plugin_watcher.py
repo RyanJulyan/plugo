@@ -1,3 +1,4 @@
+import atexit
 import logging
 import os
 import threading
@@ -6,6 +7,19 @@ from typing import Any, Callable, Optional, Set
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
+
+# Module-level flag to track if the interpreter is shutting down
+_INTERPRETER_SHUTTING_DOWN = False
+
+
+def _mark_shutdown():
+    """Mark that the interpreter is shutting down."""
+    global _INTERPRETER_SHUTTING_DOWN
+    _INTERPRETER_SHUTTING_DOWN = True
+
+
+# Register shutdown handler
+atexit.register(_mark_shutdown)
 
 
 class PluginFileEventHandler(FileSystemEventHandler):
@@ -56,6 +70,10 @@ class PluginFileEventHandler(FileSystemEventHandler):
         if not event.src_path.endswith((".py", ".json", ".txt")):
             return
 
+        # Silently ignore events during interpreter shutdown
+        if _INTERPRETER_SHUTTING_DOWN:
+            return
+
         self.logger.info(f"File change detected: {event.src_path} ({event.event_type})")
 
         # Cancel any pending reload timer
@@ -63,10 +81,14 @@ class PluginFileEventHandler(FileSystemEventHandler):
             self.pending_timer.cancel()
 
         # Schedule a new reload after the debounce period
-        self.pending_timer = threading.Timer(
-            self.debounce_seconds, self._trigger_reload
-        )
-        self.pending_timer.start()
+        try:
+            self.pending_timer = threading.Timer(
+                self.debounce_seconds, self._trigger_reload
+            )
+            self.pending_timer.start()
+        except RuntimeError:
+            # Ignore errors during timer creation (can happen during shutdown)
+            self.pending_timer = None
 
     def _trigger_reload(self) -> None:
         """
@@ -150,6 +172,11 @@ class PluginWatcher:
         """
         Stop watching for file changes.
         """
+        # Cancel any pending reload timer to ensure clean shutdown
+        if self.event_handler.pending_timer is not None:
+            self.event_handler.pending_timer.cancel()
+            self.event_handler.pending_timer = None
+
         self.observer.stop()
         self.observer.join()
         self.logger.info("Plugin watcher stopped")
