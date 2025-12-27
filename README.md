@@ -466,6 +466,16 @@ If none of the above (`VENV_HOME` or `PLUGO_VENV_HOME`) are set, the default bas
 ./.plugo/venvs
 ```
 
+Debug subprocess output during venv creation (optional). Output is disabled by default:
+```shell
+# Show subprocess output during virtual environment creation and package installation
+export PLUGO_SHOW_SUBPROCESS_OUTPUT=true
+# or:
+export PLUGO_SHOW_SUBPROCESS_OUTPUT=1
+```
+
+This environment variable controls whether subprocess output from `venv` creation and `pip install` commands is displayed. By default, subprocess output is hidden. Set this to `true`, `1`, `yes`, or `on` (case-insensitive) to see detailed output from these operations, which can be helpful for debugging dependency issues or understanding what's happening during plugin installation.
+
 ## Development
 ### Install the local environment
 ```shell

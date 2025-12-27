@@ -14,6 +14,16 @@ DEFAULT_VENV_HOME = Path(
     os.environ.get("PLUGO_VENV_HOME", os.environ.get("VENV_HOME", "./.plugo/venvs"))
 )
 
+# Environment variable to control subprocess output visibility (for debugging)
+_SHOW_SUBPROCESS_OUTPUT = os.environ.get(
+    "PLUGO_SHOW_SUBPROCESS_OUTPUT", ""
+).lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
 
 @dataclass
 class VenvInfo:
@@ -117,10 +127,20 @@ class VenvManager:
         python_bin = self._python_path_for(venv_dir)
 
         if not python_bin.exists():
-            subprocess.check_call([sys.executable, "-m", "venv", str(venv_dir)])
+            kwargs = {
+                "stdout": None if _SHOW_SUBPROCESS_OUTPUT else subprocess.DEVNULL,
+                "stderr": None if _SHOW_SUBPROCESS_OUTPUT else subprocess.DEVNULL,
+            }
+            subprocess.check_call(
+                [sys.executable, "-m", "venv", str(venv_dir)], **kwargs
+            )
 
         reqs: List[str] = [r.strip() for r in requirements if r and r.strip()]
         if reqs:
+            kwargs = {
+                "stdout": None if _SHOW_SUBPROCESS_OUTPUT else subprocess.DEVNULL,
+                "stderr": None if _SHOW_SUBPROCESS_OUTPUT else subprocess.DEVNULL,
+            }
             subprocess.check_call(
                 [
                     str(python_bin),
@@ -130,7 +150,8 @@ class VenvManager:
                     "-U",
                     "pip",
                     *reqs,
-                ]
+                ],
+                **kwargs,
             )
 
         return VenvInfo(key=key, path=venv_dir, python=python_bin)
